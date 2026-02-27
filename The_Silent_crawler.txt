@@ -1,0 +1,61 @@
+The Silent Crawler:
+
+lab - http://54.206.81.214:3000/
+
+A portal. A robot. A few forbidden paths. The site looks clean — maybe too clean. Search engines are told what not to look at. But you're not a search engine, are you?
+
+Someone left breadcrumbs in the shadows. Three doors. Only two matter. One holds a secret. One holds a key. The third is just noise — or is it?
+
+Decrypt what you find. The answer was never on the page.
+
+# CTF Challenge Write-up: Encrypted Flag in `robots.txt`
+
+## Description
+"A portal. A robot. A few forbidden paths. The site looks clean — maybe too clean. Search engines are told what not to look at. But you're not a search engine, are you? Someone left breadcrumbs in the shadows. Three doors. Only two matter. One holds a secret. One holds a key. The third is just noise — or is it? Decrypt what you find. The answer was never on the page."
+
+## Solution Steps
+1.  **Inspect `robots.txt`:** The first hint ("Search engines are told what not to look at.") led to checking `http://54.206.81.214:3000/robots.txt`.
+    ```bash
+    curl http://54.206.81.214:3000/robots.txt
+    ```
+    This revealed three disallowed paths: `/backup.zip`, `/hello.zip`, and `/something.zip`.
+2.  **Download Zip Files:** The three zip files were downloaded.
+    ```bash
+    wget -P /home/tommy/.gemini/tmp/ http://54.206.81.214:3000/backup.zip
+    wget -P /home/tommy/.gemini/tmp/ http://54.206.81.214:3000/hello.zip
+    wget -P /home/tommy/.gemini/tmp/ http://54.206.81.214:3000/something.zip
+    ```
+3.  **Inspect `backup.zip` (The Secret):** Listing the contents of `backup.zip` (`unzip -l backup.zip`) revealed `backup/secret/vault/credentials/notes.txt`. This file was extracted.
+    ```bash
+    unzip -p /home/tommy/.gemini/tmp/backup.zip backup/secret/vault/credentials/notes.txt
+    ```
+    The `notes.txt` file contained an `ENCRYPTED_FLAG` and instructions for decryption: Base64-decode, then XOR with a repeating key.
+    `ENCRYPTED_FLAG=Iyw/KRgAVRZbEQpuRgAVDSxUEC0cRB4XJldAAl4XFxg=`
+    `ENCRYPTION=xor-base64`
+    The instructions stated the repeating key needed to be "found elsewhere."
+4.  **Inspect `hello.zip` (The Key):** Listing the contents of `hello.zip` (`unzip -l hello.zip`) revealed `hello/private/keys/key.txt`. This file was extracted by first unzipping the entire archive due to path issues.
+    ```bash
+    unzip /home/tommy/.gemini/tmp/hello.zip -d /home/tommy/.gemini/tmp/hello_unzipped
+    read_file /home/tommy/.gemini/tmp/hello_unzipped/hello/private/keys/key.txt
+    ```
+    The `key.txt` file contained the repeating key: `KEY=mysecretkey123`.
+5.  **Decrypt the Flag:** A Python script was used to perform the Base64 decoding and repeating XOR decryption.
+    ```python
+    import base64
+
+    encrypted_flag_b64 = "Iyw/KRgAVRZbEQpuRgAVDSxUEC0cRB4XJldAAl4XFxg="
+    key = "mysecretkey123"
+
+    # Base64 decode
+    decoded_flag = base64.b64decode(encrypted_flag_b64)
+
+    # XOR decryption
+    decrypted_flag = ""
+    for i in range(len(decoded_flag)):
+        decrypted_flag += chr(decoded_flag[i] ^ ord(key[i % len(key)]))
+
+    print(decrypted_flag)
+    ```
+
+## Flag
+`NULL{r0b0ts_t3xt_1s_y0ur_fr13nd}`

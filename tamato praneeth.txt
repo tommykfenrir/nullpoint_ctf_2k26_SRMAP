@@ -1,0 +1,11 @@
+ Analyzed the image yookso.jpg (Praneeth).
+
+ Scanned the file's Metadata and Strings for hidden text.
+
+ Located a specific pattern following the standard CTF flag format: KEYWORD{string}.
+
+ Bypassed the redacted currency (####) to reveal the hidden value.
+
+ Captured the flag
+
+ flag: NULL{abtsfep036fg}.

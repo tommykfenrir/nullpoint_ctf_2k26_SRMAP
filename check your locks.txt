@@ -1,0 +1,15 @@
+Loaded the Docker image.
+
+Ran the container exposing port 3000.
+
+Entered the container shell.
+
+Located certificate files in /home/null/certs.
+
+Inspected cert.pem using OpenSSL.
+
+Extracted the Base64-encoded value from the Subject field.
+
+Decoded it to retrieve the final flag.
+
+flag:NULL{07fe96fbfa8d}

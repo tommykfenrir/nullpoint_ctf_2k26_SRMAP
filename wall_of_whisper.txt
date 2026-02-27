@@ -1,0 +1,6 @@
+The Wall of whisper
+
+# description:A wall where strangers leave their thoughts. One of them left something they shouldn't have. Every post has a number — and numbers are meant to be counted.
+
+## writeup:in the givem description and observing the posts and unmbers,its very clear that they are repititive except for one whuich is unusual and exists as a string which is encoded in base 58 encoding "26JBH2uQM6hksqpAgWY2zrJv6HN4==" 
+decoding it gives us the flag

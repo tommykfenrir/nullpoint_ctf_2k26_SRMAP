@@ -1,0 +1,7 @@
+Have the same meal twice a day
+# CTF challange write up
+## Description:VGxWTVRIdG5NREEwTFhNM1lYSTNmUT09
+
+The whole clue is to decode the string twice and we get the flag
+
+flag: NULL{g004-s7ar7}

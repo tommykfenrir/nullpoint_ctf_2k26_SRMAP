@@ -1,0 +1,43 @@
+The Invisible Handshake 
+
+lab - http://54.66.211.78:3000/
+
+A page. Two buttons. A background that changes color. Seems like everything is working just fine. But your browser only shows you what it's told to show. Some conversations happen before you even see the page — and not every method gets a response you can read.
+
+# CTF Challenge Write-up: HTTP Methods Challenge
+
+## Description
+"A page. Two buttons. A background that changes color. Seems like everything is working just fine. But your browser only shows you what it's told to show. Some conversations happen before you even see the page — and not every method gets a response you can read."
+
+## Solution Steps
+1.  **Inspect Main Page:** Fetched the main page (`http://54.66.211.78:3000/`) and its source code.
+    ```bash
+    curl -v http://54.66.211.78:3000/
+    ```
+    The source code hinted at:
+    *   More HTTP methods than GET and POST.
+    *   Secrets in response *headers*.
+    *   Public source files (`style.css`, `app.js`).
+2.  **Inspect `app.js`:** Fetched `app.js` to understand button functionality.
+    ```bash
+    curl http://54.66.211.78:3000/app.js
+    ```
+    This revealed endpoints `GET /color?c=red` and `POST /color?c=blue`.
+3.  **Try `OPTIONS` Method:** Sent an `OPTIONS` request to `/color` to see allowed methods.
+    ```bash
+    curl -v -X OPTIONS http://54.66.211.78:3000/color
+    ```
+    The `Allow` header showed `HEAD,GET,POST`.
+4.  **Try `HEAD` Method (Part 1 of Flag):** Sent a `HEAD` request to `/color`, as headers were hinted to contain secrets.
+    ```bash
+    curl -v -X HEAD http://54.66.211.78:3000/color
+    ```
+    The response headers contained: `X-CTF-Part-1: NULL{http_head_ok-`.
+5.  **Inspect `style.css` (Part 2 of Flag):** The hint "Source files are public — if you can load it, you can read it." and the user's suggestion led to inspecting `style.css`.
+    ```bash
+    curl http://54.66.211.78:3000/style.css
+    ```
+    A comment in the CSS file contained: `X-CTF-Part-2: css_comment_ftw}`.
+
+## Flag
+`NULL{http_head_ok-css_comment_ftw}`

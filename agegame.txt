@@ -1,0 +1,14 @@
+InfiNiTu$@26
+Croma@).(    NULL POINT CTF
+
+age game  |
+Description: file link - https://tinyurl.com/mrxbj4sa
+This message was secured using technology older than your playlist. Decode it and bring it into this decade. Guess the age of the maker?
+
+Solution: 
+IDENTIFY THE ENCODING : The given string contains letters, numbers, +, / and =. The string is Base64 encoded.
+
+DECODE FROM BASE64: Using online Base64 decoder, decode the string leading to an output.
+The output may not be completely decoded as it still looks like a Base64 string. Repeat the decoding until the flag is found.
+
+FLAG: NULL{olderthanyou}

