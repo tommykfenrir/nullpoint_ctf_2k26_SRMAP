@@ -1,0 +1,23 @@
+The actual clue is right in the description: "every archive has a crack in the stone." I realized I shouldn't be attacking the running web server at all. The secret isn't in the live app; it's hiding in the whispers.tar.gz file itself.
+
+Here's the trick with Docker: images are built in layers. If a challenge author copies a file with the real flag into the image during the build process, and then deletes it or overwrites it with a fake flag in a later step, the original file isn't actually gone. It's still sitting inside one of the older historical layers. Docker just hides it from the final container's filesystem.
+
+So, instead of loading the image into the docker daemon, I just treated the .tar.gz like a regular archive and ripped it open to do some local forensics.
+
+First, I made a new directory and unpacked the main tarball:
+Bash
+
+mkdir layers
+tar -xf whispers.tar.gz -C layers
+cd layers
+
+If you ls in that folder, you'll see a bunch of directories with long random hex names. These are the individual Docker layers. Inside each of those folders is another layer.tar file, which contains the actual filesystem changes made during that specific step of the Docker build.
+
+You could extract every single layer.tar manually and dig through the old directories looking for the original flag file, but there's a much faster way. Since we know the flag format starts with NULL{, we can just recursively grep the entire directory.
+Bash
+
+grep -a -r "NULL{" .
+
+(Note: The -a flag is super important here because it forces grep to read the binary .tar files as if they were plain text).
+
+Boom. Grep dumps out the real flag from inside one of the older layer archives. The fake flag we found on the web server was literally just a decoy slapped on at the very end of the Dockerfile.

@@ -1,0 +1,12 @@
+When I first read through the story, the weird capitalization stood out immediately. Words like Ledger, Validator, Mining, Staking, Fork, Airdrop... they are all capitalized for literally no grammatical reason. Plus, they all share a heavy Web3/blockchain theme. That right there is the whole trick: the story is our dictionary, and those specific capitalized words are our custom wordlist.
+
+Next, I looked at the target hash. If you strip off that 0x prefix, you're left with a 64-character hex string. That length screams SHA-256, which perfectly fits the crypto narrative of the challenge.
+
+From there, you don't even need to fire up heavy cracking tools like Hashcat or John the Ripper. You just need to hash that short list of words until you get a collision. I just threw together a quick bash one-liner in the terminal to test them all:
+Bash
+
+for word in Ledger Validator Mining Staking Fork Airdrop Mainnet Testnet Sharding Slashing Oracle Immutable; do
+    echo -n $word | sha256sum | grep cad01e2301c2d1590ec1c9a1c3332164a311c8e6644eb5da648b9c114ebff08a && echo "Match: $word"
+done
+
+Run that, and Airdrop instantly pops out as the winner. Wrap it in the NULL{} format and the challenge is done.

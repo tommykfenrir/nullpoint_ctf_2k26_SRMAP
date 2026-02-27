@@ -1,0 +1,7 @@
+When I first read the scenario, the phrase "silently disappeared" gave the whole game away. In any digital forensics or footprinting challenge, infrastructure suddenly vanishing is your biggest clue.
+
+Whenever a prompt mentions that blogs, docs, or subdomains were hastily taken offline to hide a mistake, your first stop should always be the Wayback Machine (archive.org). Nothing on the internet is ever truly deleted.
+
+Even though CypherNest nuked their live servers in a panic, the Internet Archive had already captured a snapshot of their exposed configuration data. All I had to do was drop their target domain into the Wayback Machine's search bar.
+
+Clicking through the historical snapshots of their deleted development subdomains brought up the original site exactly as it looked before the cover-up. The leaked config data and the flag CTF{n3st_l4bs_3xp0s3d} were sitting right there on the archived page.

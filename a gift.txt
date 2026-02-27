@@ -1,0 +1,10 @@
+When I first looked at this, the flag itself was the biggest spoiler: NULL{upx_p4ck3d_but_str1ngs_n3v3r_l13}. It literally spells out the whole trick. The binary is packed with UPX, which usually means you'd have to unpack it with upx -d before throwing it into a disassembler like Ghidra or IDA.
+
+But the second half of the flag—"strings never lie"—is the real hint. Before doing any complicated reversing, I just decided to check for the absolute lowest-hanging fruit.
+
+I ran a basic string dump against the file right from the terminal:
+Bash
+
+strings <filename> | grep "NULL{"
+
+Bam. The flag popped right out in plain text. The author was definitely trying to get people to overcomplicate things and waste time reversing a packed binary when a standard Linux command does the job in two seconds. Always check your strings first!
