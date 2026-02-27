@@ -20,4 +20,6 @@ grep -a -r "NULL{" .
 
 (Note: The -a flag is super important here because it forces grep to read the binary .tar files as if they were plain text).
 
+
 Boom. Grep dumps out the real flag from inside one of the older layer archives. The fake flag we found on the web server was literally just a decoy slapped on at the very end of the Dockerfile.
+NULL{flag_on_Mountain}
