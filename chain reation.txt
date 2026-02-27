@@ -9,4 +9,6 @@ for word in Ledger Validator Mining Staking Fork Airdrop Mainnet Testnet Shardin
     echo -n $word | sha256sum | grep cad01e2301c2d1590ec1c9a1c3332164a311c8e6644eb5da648b9c114ebff08a && echo "Match: $word"
 done
 
+
 Run that, and Airdrop instantly pops out as the winner. Wrap it in the NULL{} format and the challenge is done.
+NULL{Airdrop}
