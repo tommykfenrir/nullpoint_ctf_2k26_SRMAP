@@ -7,4 +7,6 @@ Bash
 
 strings <filename> | grep "NULL{"
 
+
 Bam. The flag popped right out in plain text. The author was definitely trying to get people to overcomplicate things and waste time reversing a packed binary when a standard Linux command does the job in two seconds. Always check your strings first!
+NULL{upx_p4ck3d_but_str1ngs_n3v3r_l13}
